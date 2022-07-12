@@ -5,11 +5,18 @@ Users will be able to interact with the following commands in servers that host 
 
 ```
 !reg
+```
+```
 !honor (Etherscan HASH#1) (Etherscan HASH#2)
+```
+```
 !getBal
+```
+```
 !getDegens
 ```
-EXAMPLE: 
+
+EXAMPLE of !honor: 
 
 ```
 !honor 0x7daa42ac914a515cb6c3b1ac147e5b997abe3495985680fee392c52dfad6d1d7 0x01beda4693c0c5b06576555688193a0332017092adc71a63db298da6254cc388
