@@ -8,7 +8,7 @@ Users will be able to interact with the following commands in servers that host 
 !honor (Etherscan HASH#1) (Etherscan HASH#2)
 !getBal
 !getDegens
-
+```
 EXAMPLE: 
 
 ```
