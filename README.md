@@ -20,3 +20,15 @@ GETTING STARTED
 Simply run the following command in the desired directory of choice:
 
 `git clone https://github.com/Oreo-web3/nft-honor-tracker.git`
+
+REQUIRED PACKAGES:
+
+The nft-honor-tracker requires the ethers.js, discord.js, aws-sdk.js, and dotenv API's in order to function properly. Please use the following commands to prepare an initially empty directory for the required dependencies using NPM:
+
+```
+npm init -y
+npm install --save ethers
+npm install discord.js
+npm install aws-sdk
+npm install dotenv --save
+```
