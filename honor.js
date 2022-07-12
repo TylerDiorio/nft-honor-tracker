@@ -47,6 +47,33 @@ client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`)})
 
 client.on('messageCreate', async msg => {
+    if(msg.content.startsWith("!reg")) {
+        // Searches AWS database to check if the user is already registered
+        const getitem = async() => {
+            const params = {
+                TableName: process.env.AWS_TABLE_NAME,
+                Key: { id420lite: msg.author.id}
+            }
+            return docClient.get(params).promise()
+        }
+        var regc = await getitem();
+        if(regc.Item === undefined) {
+            const params = {
+                TableName: process.env.AWS_TABLE_NAME,
+                    Item: {
+                        id420lite: msg.author.id,
+                        EtherscanTransactions: [],
+                        ETHTotal: [],
+                        VOXIESTotal: [],
+                        FellowDegens: []
+                    }
+            }
+            docClient.put(params).promise()
+            msg.reply(`${msg.author.username} is now registered with Honor-Bot!`)
+        } else {
+            msg.reply(`${msg.author.username}, it appears you've already registered.`)
+        }
+    }
     if(msg.content.startsWith("!honor")) {
         // Initialize some error messages, which we may or may not fill later
         msg_time = ''
@@ -57,11 +84,9 @@ client.on('messageCreate', async msg => {
         var flag = 0
         // do some arg parsing and split up the transactions
         const args = msg.content.split(' ')
-        var name = args [1]
-        var tx1 = args[2]
-        var tx1hash = tx1.split('/')[4]
-        var tx2 = args[3]
-        var tx2hash = tx2.split('/')[4]
+        var name = msg.author.username
+        var tx1hash = args[1]
+        var tx2hash = args[2]
 
         // Get the transactions from ether.js then convert WEI --> ETH 
         tx_data1 = await provider.getTransaction(tx1hash)
@@ -149,13 +174,19 @@ client.on('messageCreate', async msg => {
         // Now read the Database and get some values!
         const getitem = async() => {
             const params = {
-                TableName: 'voxies-honor-tracker',
+                TableName: process.env.AWS_TABLE_NAME,
                 Key: { OreoEtherion: msg.author.id}
             }
             // everything in the try in case things aren't grabbed from DynamoDb
             try {
                 const data = await docClient.get(params).promise(); //grabs the data from DynamoDB for the discordID = partition Key
-
+                
+                //Check if the user has yet to register
+                if(data.Item === undefined) {
+                    msg.reply(`${msg.author.username}, you have not registered yet. Please type "!reg" to register.`)
+                    return
+                }
+                
                 //Now it's time to parse through the data for this discordID
                 Old_ETH = data["Item"]["ETHTotal"] 
                 Total_ETH = Old_ETH + ETHvalue            //tally up the ETH
@@ -184,7 +215,7 @@ client.on('messageCreate', async msg => {
                 let Total_Degens = [...new Set(tmp_Degens)]; //This returns ONLY unique values of tmp_Degens
 
                 //Handle Transaction and search for dupe transactions
-                tx = [tx1,tx2] //grab the transactions from earlier so they're iterable
+                tx = [tx1hash,tx2hash] //grab the transactions from earlier so they're iterable
                 Old_tx = data["Item"]["EtherscanTransactions"]//["values"]
                 var tmp_tx = [];
                 msg_tx = ''
@@ -210,7 +241,7 @@ client.on('messageCreate', async msg => {
                 if(flag == 0) {
                     // if all is good, SEND THESE VALUES OUT BOIIIIIIIIII
                     const params = {
-                        TableName: 'voxies-honor-tracker',
+                        TableName: process.env.AWS_TABLE_NAME,
                         Item: {
                             OreoEtherion: msg.author.id,
                             EtherscanTransactions: Total_tx,
