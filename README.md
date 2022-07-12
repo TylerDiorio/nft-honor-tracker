@@ -1,14 +1,14 @@
 # nft-honor-tracker
 This repository will contain the necessary files to construct a discord bot that is linked with aws DynamoDB storage for the purpose of tracking OTC/private-deals on ETH/Polygon. 
 
-Users will be able to log successful private transactions using 3 inputs: 
+Users will be able to interact with the following commands in servers that host the nft-honor-tracker: 
 
-(1) !honor
-
-(2) Etherscan/Polygonscan transaction Hash #1
-
-(3) Etherscan/Polygonscan transaction Hash #2
-
+```
+!reg
+!honor (Etherscan HASH#1) (Etherscan HASH#2)
+!getBal
+!getDegens
+```
 EXAMPLE: 
 
 ```

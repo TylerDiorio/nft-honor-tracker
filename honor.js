@@ -45,6 +45,7 @@ client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`)})
 
 client.on('messageCreate', async msg => {
+    // BEGIN !reg minor command
     if(msg.content.startsWith("!reg")) {
         // Searches AWS database to check if the user is already registered
         const getitem = async() => {
@@ -72,6 +73,52 @@ client.on('messageCreate', async msg => {
             msg.reply(`${msg.author.username}, it appears you've already registered.`)
         }
     }
+
+    // BEGIN !getEth minor command
+    if(msg.content.startsWith("!getEth")) {
+        // Searches AWS database to check if the user is already registered
+        const getitem = async() => {
+            const params = {
+                TableName: process.env.AWS_TABLE_NAME,
+                Key: { OreoEtherion: msg.author.id}
+            }
+            return docClient.get(params).promise()
+        }
+        var data = await getitem();
+        if(data.Item === undefined || data.Item === null) {
+            msg_bal = `${msg.author.username}, you are not honored with Honor-Bot`
+            msg_bal += `\nPlease type  "!reg" to register`
+            msg.reply(msg_bal)
+            return
+        }
+        msg.reply(`${msg.author.username} has logged `+ data.Item.ETHTotal +`ETH in confirmed OTC deals`)
+    }
+    
+    // BEGIN !getDegens minor command
+    if(msg.content.startsWith("!getDegens")) {
+        // Searches AWS database to check if the user is already registered
+        const getitem = async() => {
+            const params = {
+                TableName: process.env.AWS_TABLE_NAME,
+                Key: { OreoEtherion: msg.author.id}
+            }
+            return docClient.get(params).promise()
+        }
+        var data = await getitem();
+        if(data.Item === undefined || data.Item === null ) {
+            msg_bal = `${msg.author.username}, you are not honored with Honor-Bot`
+            msg_bal += `\nPlease type  "!reg" to register`
+            msg.reply(msg_bal)
+            return
+        }        
+        msg_deg = (`${msg.author.username} has logged confirmed OTC deals with: \n`)
+        if(data.Item.FellowDegens.length <= 1)
+            msg_deg = (`${msg.author.username} hasn't logged any confirmed OTC deals\n`)
+        msg_deg += `${data.Item.FellowDegens}`
+        msg.reply(msg_deg)
+    }
+    
+    // BEGIN !honor Master command
     if(msg.content.startsWith("!honor")) {
         // Initialize some error messages, which we may or may not fill later
         msg_time = ''
@@ -104,7 +151,7 @@ client.on('messageCreate', async msg => {
             msg.reply(msg_tx_null)
             return //Return out of !honor because things will error later if we have no tx_data1
         } else if(tx_data2 == null) {
-            msg_tx_null = `[Error]: ${msg.author.username}, please check that you've entered an valid HASH: \n`
+            msg_tx_null = `[Error]: ${msg.author.username}, please check that you've entered an invalid HASH: \n`
             msg_tx_null += tx2hash
             msg.reply(msg_tx_null)
             return //Return out of !honor because things will error later if we have no tx_data2
@@ -188,7 +235,7 @@ client.on('messageCreate', async msg => {
                 //msg.author.send(`... ... ... PLING! Honor level increased.`)
             } else {
                 flag += 1
-                msg_time =`[Error]: Transactions occured outside of 10 minutes!`
+                msg_time =`[Error]: Transactions occured outside of 10 minutes! \n`
             }
         }
 
@@ -283,9 +330,7 @@ client.on('messageCreate', async msg => {
                     messageContent += msg_degens
                     messageContent += msg_value
                     msg.reply(messageContent)
-
                 }
-
             } 
             catch (err) {
                 console.log(err)
