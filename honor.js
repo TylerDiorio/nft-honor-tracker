@@ -29,8 +29,8 @@ AWS.config.update({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 })
-var ddb = new AWS.DynamoDB({})
 const docClient = new AWS.DynamoDB.DocumentClient()
+
 // Track time
 const isTransactionMined = async (txnHashp) => {
     const txReceipt = await provider.getTransactionReceipt(txnHashp);
