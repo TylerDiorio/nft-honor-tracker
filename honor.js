@@ -1,5 +1,4 @@
 // @authors: Oreo | Etherion
-// @updated last: 07/11/2022
 //
 
 require('dotenv').config()
@@ -16,8 +15,7 @@ var ethers = require('ethers');
 
 ///var provider = new ethers.providers.EtherscanProvider();
 const provider = ethers.getDefaultProvider("homestead", {etherscan: "77T3FUD38QC3FNID1NR461PA7VG1CER9BF"})
-// Contact Address for Voxie Tactics Items
-var contactAddressVoxiesItem = 0x8F8E18DbEbb8CA4fc2Bc7e3425FcdFd5264E33E8;
+
 // Contact Address for Voxies NFT
 var contactAddressVoxies = 0xE3435EdBf54b5126E817363900234AdFee5B3cee
 
@@ -52,7 +50,7 @@ client.on('messageCreate', async msg => {
         const getitem = async() => {
             const params = {
                 TableName: process.env.AWS_TABLE_NAME,
-                Key: { id420lite: msg.author.id}
+                Key: { OreoEtherion: msg.author.id}
             }
             return docClient.get(params).promise()
         }
@@ -61,7 +59,7 @@ client.on('messageCreate', async msg => {
             const params = {
                 TableName: process.env.AWS_TABLE_NAME,
                     Item: {
-                        id420lite: msg.author.id,
+                        OreoEtherion: msg.author.id,
                         EtherscanTransactions: [],
                         ETHTotal: [],
                         VOXIESTotal: [],
@@ -84,14 +82,34 @@ client.on('messageCreate', async msg => {
         var flag = 0
         // do some arg parsing and split up the transactions
         const args = msg.content.split(' ')
+        if(args.length > 3 || args.length < 3) {
+            // Check to see if they've entered the corect number of arguments to !honor (args.length == 3)
+            msg_args = `[Error]: ${msg.author.username}, you've entered an invalid # of arguments to !honor`
+            msg_args += `\nTry typing "!honor HASH1 HASH2" `
+            msg.reply(msg_args)
+            return //Return out of !honor because things will error later if we have bad args
+        }
+        
         var name = msg.author.username
         var tx1hash = args[1]
         var tx2hash = args[2]
-
         // Get the transactions from ether.js then convert WEI --> ETH 
         tx_data1 = await provider.getTransaction(tx1hash)
-        value1 = tx_data1["value"]/1000000000000000000
         tx_data2 = await provider.getTransaction(tx2hash)
+        // Make sure that the transactions came back properly from getTransaction
+        // and if they did not, we need to break out of the script so the bot doesn't crash
+        if(tx_data1 == null) {
+            msg_tx_null = `[Error]: ${msg.author.username}, please check that you've entered an valid HASH: \n`
+            msg_tx_null += tx1hash
+            msg.reply(msg_tx_null)
+            return //Return out of !honor because things will error later if we have no tx_data1
+        } else if(tx_data2 == null) {
+            msg_tx_null = `[Error]: ${msg.author.username}, please check that you've entered an valid HASH: \n`
+            msg_tx_null += tx2hash
+            msg.reply(msg_tx_null)
+            return //Return out of !honor because things will error later if we have no tx_data2
+        }
+        value1 = tx_data1["value"]/1000000000000000000        
         value2 = tx_data2["value"]/1000000000000000000
 
         // Determine if the 1st address is the ETH sender
@@ -118,6 +136,9 @@ client.on('messageCreate', async msg => {
         } else {
             flag += 1
             msg_value = "[Error]: Please make sure there is 1 transaction with a Voxies NFT sent and 1 Transaction with ETH sent"
+            msg.reply(msg_value)
+            return  //had to add this return because it's critical to populate the VOXIESdata and other stuff or the code crashes
+                    // also it's faster to just stop here if it's gone wrong
         }
         // Find out who received the Voxies NFT
         VOXIESreceiver = "0x" + VOXIESdata.split("000000000000000000000000")[2]
@@ -225,7 +246,6 @@ client.on('messageCreate', async msg => {
 
                 for (let i = 0; i < Old_tx.length + tx.length; i++) {
                     if (i < Old_tx.length) {
-                        console.log(Old_tx[i]) 
                         if (Old_tx[i] == tx[0] || Old_tx[i] == tx[1]) { //if string exists = BAD ACTOR
                             flag += 1 //if they tried to use an existing tx, deny their HONOR!
                             msg_tx += "[Error]: Dupe tx found : " + Old_tx[i] +'\n'
