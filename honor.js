@@ -2,9 +2,10 @@
 // @updated last: 07/11/2022
 //
 
+require('dotenv').config()
 const { Web3Provider } = require("@ethersproject/providers");
 const Discord = require("discord.js")
-const TOKEN = "OTk1MzY5OTAyNzIwNDE3OTIy.G0C9u-.Fo-ei4EN3Nmnh0FPsFO4EgIVuBweZ1f7JiBx2c"
+const TOKEN = process.env.DISCORD_TOKEN
 const client = new Discord.Client({
     intents: [
         "GUILDS",
@@ -22,7 +23,6 @@ var contactAddressVoxies = 0xE3435EdBf54b5126E817363900234AdFee5B3cee
 
 // Connect to AWS Server for Data Storage
 var AWS = require('aws-sdk')
-require('dotenv').config()
 
 AWS.config.update({
     region: process.env.AWS_DEFAULT_REGION,
