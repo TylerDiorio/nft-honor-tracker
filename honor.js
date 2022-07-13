@@ -74,6 +74,107 @@ client.on('messageCreate', async msg => {
         }
     }
 
+    // BEGIN !addWallet medium command
+    if(msg.content.startsWith("!addWallets")) {
+        //arg parsing here and for loop for any number of args (wallets)
+        const args = msg.content.split(' ')
+        var arg_Addresses = []
+        for(let i = 1; i < args.length; i++) {
+            arg_Addresses[i-1] = args[i]
+        }
+        // Searches AWS database for current user data
+        const getitem = async() => {
+            const params = {
+                TableName: process.env.AWS_TABLE_NAME,
+                Key: { OreoEtherion: msg.author.id}
+            }
+            return docClient.get(params).promise()
+        }
+        // Search AWS database for global data
+        const getitem_global = async() => {
+            const params = {
+                TableName: process.env.AWS_TABLE_NAME,
+                Key: { OreoEtherion: '000000000000000000'}
+            }
+            return docClient.get(params).promise(); //grabs the data from DynamoDB for the discordID = partition Key               
+        } 
+        var data = await getitem();
+        var data_global = await getitem_global();   
+        //Check to make sure there has been something stored in the Global user upon initial construction
+        //I don't expect to ever see this msg_global populated as we will always have something in Global
+        if(data_global.Item === undefined || data_global.Item === null) {
+            msg_global = `[Warning]: There appears to be nothing stored in the Global User. \n` 
+            msg_global += `Please alert Oreo or Etherion, as the AWS storage server is acting up.`
+            msg.reply(msg_global) }
+
+        // parse the saved addresses from the current user
+        let Old_Addresses = data.Item.savedAddresses
+        //parse the saved addresses from the global user as a set so we can use the .has method
+        let Glob_Addresses = new Set(data_global.Item.savedAddresses)
+        // loop through the saved addresses from the current user and check if any of them
+        // overlap with the Global_Addresses, which would be a flaggable event
+        var overlap_Addresses = []
+        let tmp_Addresses = data_global.Item.savedAddresses
+        msg_overlap = `[Warning]: The following addresses have already been registered in the database : \n`
+        msg_wallet=`${msg.author.username} has added the following addresses: \n`
+        counter = 0
+        flag = 0
+        for(let i = 0; i <arg_Addresses.length; i++) {
+            // if this next statement returns `true` then that means this is an address that has
+            // already been linked to another user (partition key) as it is present in Glob_Addresses
+            if(Glob_Addresses.has(arg_Addresses[i]) === true) {
+                overlap_Addresses[i] = arg_Addresses[i]
+                msg_overlap += overlap_Addresses[i] + '\n'
+                flag += 1
+            } 
+            // otherwise if you're here that means you found no overlapping string and can add it to global
+            else if(Glob_Addresses.has(arg_Addresses[i]) !== true) {
+                msg_wallet += arg_Addresses[i] +'\n'
+                tmp_Addresses[tmp_Addresses.length + counter] = arg_Addresses[i]
+                counter += 1
+                Old_Addresses[i] = arg_Addresses[i]
+                // see if there is an ENS associated with the valid new address
+                Old_AddressENS = await provider.lookupAddress(Old_Addresses[i])
+                // also make sure that the ENS isn't just null..
+                if(Old_AddressENS !== null) {
+                    Old_Addresses[i]=Old_AddressENS //replace the Old_Addresses with an ENS if it exists
+                } 
+            }
+        }
+        // These statements shouldn't be necessary because they should only be unique already
+        let Total_Addresses = Old_Addresses; //This returns ONLY unique values of tmp_Addresses 
+        let Global_Addresses = tmp_Addresses; //This returns ONLY unique values of tmp_Addresses 
+
+        const params = {
+            TableName: process.env.AWS_TABLE_NAME,
+            Item: {
+                OreoEtherion: msg.author.id,
+                EtherscanTransactions: data_global.Item.EtherscanTransactions,
+                ETHTotal: data_global.Item.ETHTotal,
+                VOXIESTotal: data_global.Item.VOXIESTotal,
+                FellowDegens: data_global.Item.FellowDegens,
+                savedAddresses: Total_Addresses
+            }
+        }
+        const params_global = {
+            TableName: process.env.AWS_TABLE_NAME,
+            Item: {
+                OreoEtherion: '000000000000000000',
+                EtherscanTransactions: data.Item.EtherscanTransactions,
+                ETHTotal: data.Item.ETHTotal,
+                VOXIESTotal: data.Item.VOXIESTotal,
+                FellowDegens: data.Item.FellowDegens,
+                savedAddresses: Global_Addresses
+            }
+        }
+        await docClient.put(params).promise()
+        await docClient.put(params_global).promise()
+        if (flag !== 0) {
+            msg_wallet+= '\n' + msg_overlap
+        }
+        msg.reply(msg_wallet) //these need to only be true if the above promises go through
+    }
+
     // BEGIN !getEth minor command
     if(msg.content.startsWith("!getEth")) {
         // Searches AWS database to check if the user is already registered
@@ -93,7 +194,7 @@ client.on('messageCreate', async msg => {
         }
         msg.reply(`${msg.author.username} has logged `+ data.Item.ETHTotal +`ETH in confirmed OTC deals`)
     }
-    
+
     // BEGIN !getDegens minor command
     if(msg.content.startsWith("!getDegens")) {
         // Searches AWS database to check if the user is already registered
@@ -136,7 +237,6 @@ client.on('messageCreate', async msg => {
             msg.reply(msg_args)
             return //Return out of !honor because things will error later if we have bad args
         }
-        
         var name = msg.author.username
         var tx1hash = args[1]
         var tx2hash = args[2]
@@ -247,96 +347,118 @@ client.on('messageCreate', async msg => {
             }
             // everything in the try in case things aren't grabbed from DynamoDb
             try {
-                const data = await docClient.get(params).promise(); //grabs the data from DynamoDB for the discordID = partition Key
-                
-                //Check if the user has yet to register
-                if(data.Item === undefined) {
-                    msg.reply(`${msg.author.username}, you have not registered yet. Please type "!reg" to register.`)
-                    return
+                return docClient.get(params).promise(); //grabs the data from DynamoDB for the discordID = partition Key               
                 }
-                
-                //Now it's time to parse through the data for this discordID
-                Old_ETH = data["Item"]["ETHTotal"] 
-                Total_ETH = Old_ETH + ETHvalue            //tally up the ETH
-                Old_VOXIES = data["Item"]["VOXIESTotal"]
-                Total_VOXIES = Old_VOXIES + VOXIESvalue   //tally up the Voxies
-
-                //Search for Known Degens and add new ones if not known
-                New_Degens = [ETHsenderENS, ETHreceiverENS, VOXIESsenderENS, VOXIESreceiverENS] //grab the transactions from earlier so they're iterable
-                Old_Degens = data["Item"]["FellowDegens"]//["values"]
-                // This for/if/if loop is to check the wallets involved in the transaction and see if they're already registered 
-                // on the DynamoDB. Then if they're already found in the database entry for this Discord ID, then they aren't 
-                // added to Total_Degens variable (outside of for loop). So the Total_Degens variable is the FULL history of ...
-                // Degens that have interacted with this Discord ID and has been verified to not include any duplicates
-                // FUTURE STUFF: Try to just see if any of the 4 New_Degens exist in the Old_Degens with a for-loop i=0 to 4
-                var tmp_Degens = [];
-                for (let i = 0; i < Old_Degens.length + New_Degens.length; i++) {
-                    if (i < Old_Degens.length) { 
-                        if (Old_Degens[i] == New_Degens[0] || Old_Degens[i] == New_Degens[1] || Old_Degens[i] == New_Degens[2] || Old_Degens[i] == New_Degens[3]) {
-                            console.log("Dupe Degen found : ", Old_Degens[i]) 
-                        }
-                        tmp_Degens[i] = Old_Degens[i]
-                    } else {
-                        tmp_Degens[i] = New_Degens[i-Old_Degens.length]
-                    } 
-                }
-                let Total_Degens = [...new Set(tmp_Degens)]; //This returns ONLY unique values of tmp_Degens
-
-                //Handle Transaction and search for dupe transactions
-                tx = [tx1hash,tx2hash] //grab the transactions from earlier so they're iterable
-                Old_tx = data["Item"]["EtherscanTransactions"]//["values"]
-                var tmp_tx = [];
-                msg_tx = ''
-                // This for/if/if loop is to check the transactions iand see if they're already registered on the DynamoDB. 
-                // Then if they're already found in the database entry for this Discord ID, a flag is tossed to invalidate 
-                // this attempted HONOR.
-
-                for (let i = 0; i < Old_tx.length + tx.length; i++) {
-                    if (i < Old_tx.length) {
-                        if (Old_tx[i] == tx[0] || Old_tx[i] == tx[1]) { //if string exists = BAD ACTOR
-                            flag += 1 //if they tried to use an existing tx, deny their HONOR!
-                            msg_tx += "[Error]: Dupe tx found : " + Old_tx[i] +'\n'
-                        }
-                        tmp_tx[i] = Old_tx[i]
-                    } else {
-                        tmp_tx[i] = tx[i-Old_tx.length]
-                    }
-                }
-                let Total_tx = [...new Set(tmp_tx)]; //This returns ONLY unique values of tmp_tx
-
-                // If all has gone well and flag == 0, then proceed to honor them!
-                if(flag == 0) {
-                    // if all is good, SEND THESE VALUES OUT BOIIIIIIIIII
-                    const params = {
-                        TableName: process.env.AWS_TABLE_NAME,
-                        Item: {
-                            OreoEtherion: msg.author.id,
-                            EtherscanTransactions: Total_tx,
-                            ETHTotal: Total_ETH,
-                            VOXIESTotal: Total_VOXIES,
-                            FellowDegens: Total_Degens
-                        }
-                    }
-                    docClient.put(params).promise()
-
-                    messageContent = name + ' has been honored for : ' + ETHvalue + ' ETH & ' + '1 VOXIES NFT'
-                    messageContent += "\n" + ' in a trade between: ' + ETHsenderENS + ' & ' + VOXIESsenderENS
-                    messageContent += "\n" + name + ' now has been honored for a total of: ' + Total_ETH + 'ETH!'
-                    msg.reply(messageContent)
-                } else {
-                    messageContent = name + ", it appears you've logged the following errors: \n"
-                    messageContent += msg_time
-                    messageContent += msg_tx
-                    messageContent += msg_degens
-                    messageContent += msg_value
-                    msg.reply(messageContent)
-                }
-            } 
             catch (err) {
                 console.log(err)
+            }} 
+            
+        var data = await getitem();   
+        //Check if the user has yet to register
+        if(data.Item === undefined || data.Item === null) {
+            msg.reply(`${msg.author.username}, you have not registered yet. Please type "!reg" to register.`)
+            return
+        } 
+        //Now it's time to parse through the data for this discordID
+        Old_ETH = data["Item"]["ETHTotal"] 
+        Total_ETH = Old_ETH + ETHvalue            //tally up the ETH
+        Old_VOXIES = data["Item"]["VOXIESTotal"]
+        Total_VOXIES = Old_VOXIES + VOXIESvalue   //tally up the Voxies
+
+        //Search for Known Degens and add new ones if not known
+        New_Degens = [ETHsenderENS, ETHreceiverENS, VOXIESsenderENS, VOXIESreceiverENS] //grab the transactions from earlier so they're iterable
+        Old_Degens = data["Item"]["FellowDegens"]//["values"]
+        // This for/if/if loop is to check the wallets involved in the transaction and see if they're already registered 
+        // on the DynamoDB. Then if they're already found in the database entry for this Discord ID, then they aren't 
+        // added to Total_Degens variable (outside of for loop). So the Total_Degens variable is the FULL history of ...
+        // Degens that have interacted with this Discord ID and has been verified to not include any duplicates
+        // FUTURE STUFF: Try to just see if any of the 4 New_Degens exist in the Old_Degens with a for-loop i=0 to 4
+        var tmp_Degens = [];
+        for (let i = 0; i < Old_Degens.length + New_Degens.length; i++) {
+            if (i < Old_Degens.length) { 
+                if (Old_Degens[i] == New_Degens[0] || Old_Degens[i] == New_Degens[1] || Old_Degens[i] == New_Degens[2] || Old_Degens[i] == New_Degens[3]) {
+                    console.log("Dupe Degen found : ", Old_Degens[i]) 
+                }
+                tmp_Degens[i] = Old_Degens[i]
+            } else {
+                tmp_Degens[i] = New_Degens[i-Old_Degens.length]
+            } 
+        }
+        let Total_Degens = [...new Set(tmp_Degens)]; //This returns ONLY unique values of tmp_Degens
+
+        //Handle Transaction and search for dupe transactions
+        tx = [tx1hash,tx2hash] //grab the transactions from earlier so they're iterable
+        Old_tx = data["Item"]["EtherscanTransactions"]//["values"]
+        var tmp_tx = [];
+        msg_tx = ''
+        // This for/if/if loop is to check the transactions iand see if they're already registered on the DynamoDB. 
+        // Then if they're already found in the database entry for this Discord ID, a flag is tossed to invalidate 
+        // this attempted HONOR.
+        for (let i = 0; i < Old_tx.length + tx.length; i++) {
+            if (i < Old_tx.length) {
+                if (Old_tx[i] == tx[0] || Old_tx[i] == tx[1]) { //if string exists = BAD ACTOR
+                    flag += 1 //if they tried to use an existing tx, deny their HONOR!
+                    msg_tx += "[Error]: Dupe tx found : " + Old_tx[i] +'\n'
+                }
+                tmp_tx[i] = Old_tx[i]
+            } else {
+                tmp_tx[i] = tx[i-Old_tx.length]
             }
         }
-        getitem()
+        let Total_tx = [...new Set(tmp_tx)]; //This returns ONLY unique values of tmp_tx
+
+        // This will be where we check the Total_tx and Total_savedAddresses against Global_tx 
+        // and Global_savedAddresses
+        const getitem_global = async() => {
+            const params = {
+                TableName: process.env.AWS_TABLE_NAME,
+                Key: { OreoEtherion: '000000000000000000'}
+            }
+            // everything in the try in case things aren't grabbed from DynamoDb
+            try {
+                return docClient.get(params).promise(); //grabs the data from DynamoDB for the discordID = partition Key               
+                }
+            catch (err) {
+                console.log(err)
+            }} 
+        var data_global = await getitem_global();   
+        //Check to make sure there has been anything stored in the Global user yet
+        //I don't expect to ever see this msg_global populated as we will always have something in Global
+        if(data_global.Item === undefined || data_global.Item === null) {
+            msg_global = `[Warning]: There appears to be nothing stored in the Global User. \n` 
+            msg_global += `Please alert Oreo or Etherion, as the AWS storage server is acting up.`
+            msg.reply(msg_global)
+        } 
+
+        Global_tx = data_global.Item.EtherscanTransactions
+
+        // If all has gone well and flag == 0, then proceed to honor them!
+        if(flag == 0) {
+            // if all is good, SEND THESE VALUES OUT BOIIIIIIIIII
+            const params = {
+                TableName: process.env.AWS_TABLE_NAME,
+                Item: {
+                    OreoEtherion: msg.author.id,
+                    EtherscanTransactions: Total_tx,
+                    ETHTotal: Total_ETH,
+                    VOXIESTotal: Total_VOXIES,
+                    FellowDegens: Total_Degens
+                }
+            }
+            docClient.put(params).promise()
+
+            messageContent = name + ' has been honored for : ' + ETHvalue + ' ETH & ' + '1 VOXIES NFT'
+            messageContent += "\n" + ' in a trade between: ' + ETHsenderENS + ' & ' + VOXIESsenderENS
+            messageContent += "\n" + name + ' now has been honored for a total of: ' + Total_ETH + 'ETH!'
+            msg.reply(messageContent)
+        } else {
+            messageContent = name + ", it appears you've logged the following errors: \n"
+            messageContent += msg_time
+            messageContent += msg_tx
+            messageContent += msg_degens
+            messageContent += msg_value
+            msg.reply(messageContent)
+        }
     }
 })
 
