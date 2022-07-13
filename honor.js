@@ -446,8 +446,6 @@ client.on('messageCreate', async msg => {
             msg.reply(msg_global)
         } 
 
-        Global_tx = data_global.Item.EtherscanTransactions
-
         // If all has gone well and flag == 0, then proceed to honor them!
         if(flag == 0) {
             // if all is good, SEND THESE VALUES OUT BOIIIIIIIIII
@@ -456,14 +454,33 @@ client.on('messageCreate', async msg => {
                 Item: {
                     OreoEtherion: msg.author.id,
                     EtherscanTransactions: Total_tx,
-                    ETHTotal: Total_ETH,
-                    VOXIESTotal: Total_VOXIES,
+                    ETHTotal: parseFloat(Total_ETH),
+                    VOXIESTotal: parseInt(Total_VOXIES,10),
                     FellowDegens: Total_Degens,
                     savedAddresses: data.Item.savedAddresses
                 }
             }
             docClient.put(params).promise()
 
+            // Update the global table for total amount of honorific ETH and VOXIES passed since release
+            old_global_txns = data_global.Item.EtherscanTransactions
+            old_global_eth = parseFloat(data_global.Item.ETHTotal)
+            old_global_voxies = parseInt(data_global.Item.VOXIESTotal,10)
+            old_global_degens = data_global.Item.FellowDegens
+
+            const global_params = {
+                TableName: process.env.AWS_TABLE_NAME,
+                Item: {
+                    OreoEtherion: '000000000000000000',
+                    EtherscanTransactions: Array.prototype.concat(old_global_txns,Total_tx),
+                    ETHTotal: old_global_eth+parseFloat(ETHvalue),
+                    VOXIESTotal: old_global_voxies+1,
+                    FellowDegens: Array.prototype.concat(old_global_degens,Total_Degens),
+                    savedAddresses: data_global.Item.savedAddresses
+                }
+            }
+            docClient.put(global_params).promise()
+            
             messageContent = name + ' has been honored for : ' + ETHvalue + ' ETH & ' + '1 VOXIES NFT'
             messageContent += "\n" + ' in a trade between: ' + ETHsenderENS + ' & ' + VOXIESsenderENS
             messageContent += "\n" + name + ' now has been honored for a total of: ' + Total_ETH + 'ETH!'
