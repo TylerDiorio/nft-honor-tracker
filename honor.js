@@ -79,9 +79,16 @@ client.on('messageCreate', async msg => {
         //arg parsing here and for loop for any number of args (wallets)
         const args = msg.content.split(' ')
         var arg_Addresses = []
+        var tmp_Address = ''
         for(let i = 1; i < args.length; i++) {
-            arg_Addresses[i-1] = args[i]
+            tmp_Address = await provider.lookupAddress(args[i])
+            if(tmp_Address === null) {
+                arg_Addresses[i-1] = args[i] //if the ENS doesn't exist, just use the long-form address
+            } else {
+                arg_Addresses[i-1]=tmp_Address //otherwise use their ENS
+            }
         }
+
         // Searches AWS database for current user data
         const getitem = async() => {
             const params = {
@@ -133,12 +140,6 @@ client.on('messageCreate', async msg => {
                 tmp_Addresses[tmp_Addresses.length + counter] = arg_Addresses[i]
                 counter += 1
                 Old_Addresses[i] = arg_Addresses[i]
-                // see if there is an ENS associated with the valid new address
-                Old_AddressENS = await provider.lookupAddress(Old_Addresses[i])
-                // also make sure that the ENS isn't just null..
-                if(Old_AddressENS !== null) {
-                    Old_Addresses[i]=Old_AddressENS //replace the Old_Addresses with an ENS if it exists
-                } 
             }
         }
         // These statements shouldn't be necessary because they should only be unique already
@@ -149,10 +150,10 @@ client.on('messageCreate', async msg => {
             TableName: process.env.AWS_TABLE_NAME,
             Item: {
                 OreoEtherion: msg.author.id,
-                EtherscanTransactions: data_global.Item.EtherscanTransactions,
-                ETHTotal: data_global.Item.ETHTotal,
-                VOXIESTotal: data_global.Item.VOXIESTotal,
-                FellowDegens: data_global.Item.FellowDegens,
+                EtherscanTransactions: data.Item.EtherscanTransactions,
+                ETHTotal: data.Item.ETHTotal,
+                VOXIESTotal: data.Item.VOXIESTotal,
+                FellowDegens: data.Item.FellowDegens,
                 savedAddresses: Total_Addresses
             }
         }
@@ -160,10 +161,10 @@ client.on('messageCreate', async msg => {
             TableName: process.env.AWS_TABLE_NAME,
             Item: {
                 OreoEtherion: '000000000000000000',
-                EtherscanTransactions: data.Item.EtherscanTransactions,
-                ETHTotal: data.Item.ETHTotal,
-                VOXIESTotal: data.Item.VOXIESTotal,
-                FellowDegens: data.Item.FellowDegens,
+                EtherscanTransactions: data_global.Item.EtherscanTransactions,
+                ETHTotal: data_global.Item.ETHTotal,
+                VOXIESTotal: data_global.Item.VOXIESTotal,
+                FellowDegens: data_global.Item.FellowDegens,
                 savedAddresses: Global_Addresses
             }
         }
@@ -226,6 +227,7 @@ client.on('messageCreate', async msg => {
         msg_tx = ''
         msg_degens = ''
         msg_value = ''
+        msg_whitelist = ''
         // flag will keep track of anything which indicates to reject the Honor
         var flag = 0
         // do some arg parsing and split up the transactions
@@ -359,6 +361,19 @@ client.on('messageCreate', async msg => {
             msg.reply(`${msg.author.username}, you have not registered yet. Please type "!reg" to register.`)
             return
         } 
+        
+        // Check that at least 1 of the users involved in the transaction is present in 
+        // data.Item.savedAddresses (the current user's table entry for savedAddresses)
+        let user_Addresses = new Set(data.Item.savedAddresses)
+        if(user_Addresses.has(ETHsenderENS) !== true && user_Addresses.has(ETHreceiverENS) !== true && 
+        user_Addresses.has(VOXIESsenderENS) !== true && user_Addresses.has(VOXIESreceiverENS)!== true) {
+            flag += 1
+            msg_whitelist += "[Error]: None of the addresses involved in these transactions are present in"
+            msg_whitelist += `${msg.author.username}'s user. \n`
+            msg_whitelist += "Please add your addresses to the database using `!addWallets Wallet1 Wallet2 WalletN` \n"
+        }
+        
+
         //Now it's time to parse through the data for this discordID
         Old_ETH = data["Item"]["ETHTotal"] 
         Total_ETH = Old_ETH + ETHvalue            //tally up the ETH
@@ -442,7 +457,8 @@ client.on('messageCreate', async msg => {
                     EtherscanTransactions: Total_tx,
                     ETHTotal: Total_ETH,
                     VOXIESTotal: Total_VOXIES,
-                    FellowDegens: Total_Degens
+                    FellowDegens: Total_Degens,
+                    savedAddresses: data.Item.savedAddresses
                 }
             }
             docClient.put(params).promise()
@@ -457,6 +473,7 @@ client.on('messageCreate', async msg => {
             messageContent += msg_tx
             messageContent += msg_degens
             messageContent += msg_value
+            messageContent += msg_whitelist
             msg.reply(messageContent)
         }
     }
