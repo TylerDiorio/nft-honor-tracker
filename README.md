@@ -19,10 +19,13 @@ Users will be able to interact with the following commands in servers that host 
 !getDegens
 ```
 
-EXAMPLE of !honor: 
+EXAMPLES:
 
 ```
 !honor 0x7daa42ac914a515cb6c3b1ac147e5b997abe3495985680fee392c52dfad6d1d7 0x01beda4693c0c5b06576555688193a0332017092adc71a63db298da6254cc388
+```
+```
+!addWallets 0x6C485b8A1b5DE16Bd7De7Da6b90d88446B7aE824 0x1C233950Fb282F107c4710D05F4c0a10F31DcA46 0x8bEd15d3C26159f9512EdC2696B0292C9917ce56 0x8a04Df9205eFDB0C7434aBE33274117E881fd704
 ```
 The AWS database will be used to keep a running tally of total ETH/NFT assets transacted so users can easily understand the reputation of any individual with which they are contemplating transacting with.
 
