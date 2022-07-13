@@ -64,7 +64,8 @@ client.on('messageCreate', async msg => {
                         EtherscanTransactions: [],
                         ETHTotal: [],
                         VOXIESTotal: [],
-                        FellowDegens: []
+                        FellowDegens: [],
+                        savedAddresses: []
                     }
             }
             docClient.put(params).promise()
