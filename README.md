@@ -7,6 +7,9 @@ Users will be able to interact with the following commands in servers that host 
 !reg
 ```
 ```
+!addWallets (Address1) (Address2) (AddressN)
+```
+```
 !honor (Etherscan HASH#1) (Etherscan HASH#2)
 ```
 ```
