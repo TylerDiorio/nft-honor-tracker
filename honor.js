@@ -75,6 +75,73 @@ client.on('messageCreate', async msg => {
         }
     }
 
+    // BEGIN !wipe-Oreo minor command
+    if(msg.content.startsWith("!wipe-oreo")) {
+        // Searches AWS database for current user data
+        const params = {
+            TableName: process.env.AWS_TABLE_NAME,
+            Item: {
+                OreoEtherion: '523680748717211687',
+                EtherscanTransactions: [],
+                ETHTotal: parseFloat(0),
+                VOXIESTotal: parseInt(0),
+                FellowDegens: [],
+                savedAddresses: []
+            }
+        }
+        try{
+            await docClient.put(params).promise()
+            msg.reply("Sucessfully reset Oreo's info in the DynamoDB")
+        } catch (err) {
+            console.log(err)
+            msg.reply("Something appears to be wrong. Check try/catch in !wipe-oreo")
+        }
+    }
+    // BEGIN !wipe-Etherion
+    if(msg.content.startsWith("!wipe-etherion")) {
+        // Searches AWS database for current user data
+        const params = {
+            TableName: process.env.AWS_TABLE_NAME,
+            Item: {
+                OreoEtherion: '189131746749448192',
+                EtherscanTransactions: [],
+                ETHTotal: parseFloat(0),
+                VOXIESTotal: parseInt(0),
+                FellowDegens: [],
+                savedAddresses: []
+            }
+        }
+        try{
+            await docClient.put(params).promise()
+            msg.reply("Sucessfully reset  Etherion's info in the DynamoDB")
+        } catch (err) {
+            console.log(err)
+            msg.reply("Something appears to be wrong. Check try/catch in !wipe-etherion")
+        }
+    }
+    // BEGIN !wipe-global minor command
+    if(msg.content.startsWith("!wipe-global")) {
+        // Searches AWS database for current user data
+        const params = {
+            TableName: process.env.AWS_TABLE_NAME,
+            Item: {
+                OreoEtherion: '000000000000000000',
+                EtherscanTransactions: [],
+                ETHTotal: parseFloat(0),
+                VOXIESTotal: parseInt(0),
+                FellowDegens: [],
+                savedAddresses: []
+            }
+        }
+        try{
+            await docClient.put(params).promise()
+            msg.reply("Sucessfully reset the Global user's info in the DynamoDB")
+        } catch (err) {
+            console.log(err)
+            msg.reply("Something appears to be wrong. Check try/catch in !wipe-global")
+        }
+    }
+
     // BEGIN !addWallet medium command
     if(msg.content.startsWith("!addWallets")) {
         //arg parsing here and for loop for any number of args (wallets)
