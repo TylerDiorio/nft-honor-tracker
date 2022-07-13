@@ -7,6 +7,15 @@ Users will be able to interact with the following commands in servers that host 
 !reg
 ```
 ```
+!wipe-oreo
+```
+```
+!wipe-etherion
+```
+```
+!wipe-global
+```
+```
 !addWallets (Address1) (Address2) (AddressN)
 ```
 ```
