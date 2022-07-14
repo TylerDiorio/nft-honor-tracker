@@ -459,7 +459,8 @@ client.on('messageCreate', async msg => {
         var tmp_Degens = [];
         for (let i = 0; i < Old_Degens.length + New_Degens.length; i++) {
             if (i < Old_Degens.length) { 
-                if (Old_Degens[i] == New_Degens[0] || Old_Degens[i] == New_Degens[1] || Old_Degens[i] == New_Degens[2] || Old_Degens[i] == New_Degens[3]) {
+                if (Old_Degens[i] == New_Degens[0] || Old_Degens[i] == New_Degens[1] || 
+                    Old_Degens[i] == New_Degens[2] || Old_Degens[i] == New_Degens[3]) {
                     console.log("Dupe Degen found : ", Old_Degens[i]) 
                 }
                 tmp_Degens[i] = Old_Degens[i]
@@ -513,6 +514,32 @@ client.on('messageCreate', async msg => {
             msg.reply(msg_global)
         } 
 
+        //Prepare the global degens to store total people transacted with us
+        let Glob_Degens = new Set(data_global.Item.FellowDegens)
+        let tmp_Glob_Degens = data_global.Item.FellowDegens
+
+        for(let i = 0; i <Total_Degens.length; i++) {
+            // if this next statement returns !== true then it's a new address we need to store
+            if(Glob_Degens.has(Total_Degens[i]) !== true) {
+                tmp_Glob_Degens[tmp_Glob_Degens.length] = Total_Degens[i]
+            }
+        }
+        // These statements shouldn't be necessary because they should only be unique already
+        let Global_Degens = tmp_Glob_Degens;  
+       
+        //Prepare the global tx to store total people transacted with us
+       let Glob_tx = new Set(data_global.Item.EtherscanTransactions)
+       let tmp_Glob_tx = data_global.Item.EtherscanTransactions
+
+       for(let i = 0; i <Total_tx.length; i++) {
+           // if this next statement returns !== true then it's a new address we need to store
+           if(Glob_tx.has(Total_tx[i]) !== true) {
+               tmp_Glob_tx[tmp_Glob_tx.length] = Total_tx[i]
+           }
+       }
+       // These statements shouldn't be necessary because they should only be unique already
+       let Global_tx = tmp_Glob_tx; 
+
         // If all has gone well and flag == 0, then proceed to honor them!
         if(flag == 0) {
             // if all is good, SEND THESE VALUES OUT BOIIIIIIIIII
@@ -539,10 +566,10 @@ client.on('messageCreate', async msg => {
                 TableName: process.env.AWS_TABLE_NAME,
                 Item: {
                     OreoEtherion: '000000000000000000',
-                    EtherscanTransactions: Array.prototype.concat(old_global_txns,Total_tx),
+                    EtherscanTransactions: Global_tx,//Array.prototype.concat(old_global_txns,Total_tx),
                     ETHTotal: old_global_eth+parseFloat(ETHvalue),
                     VOXIESTotal: old_global_voxies+1,
-                    FellowDegens: Array.prototype.concat(old_global_degens,Total_Degens),
+                    FellowDegens: Global_Degens,//Array.prototype.concat(old_global_degens,Total_Degens),
                     savedAddresses: data_global.Item.savedAddresses
                 }
             }
