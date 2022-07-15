@@ -264,26 +264,6 @@ client.on('messageCreate', async msg => {
         msg.reply(msg_wallet) //these need to only be true if the above promises go through
     }
 
-    // BEGIN !getEth minor command
-    if(msg.content.startsWith("!getEth")) {
-        // Searches AWS database to check if the user is already registered
-        const getitem = async() => {
-            const params = {
-                TableName: process.env.AWS_TABLE_NAME,
-                Key: { OreoEtherion: msg.author.id}
-            }
-            return docClient.get(params).promise()
-        }
-        var data = await getitem();
-        if(data.Item === undefined || data.Item === null) {
-            msg_bal = `${msg.author.username}, you are not honored with Honor-Bot`
-            msg_bal += `\nPlease type  "!reg" to register`
-            msg.reply(msg_bal)
-            return
-        }
-        msg.reply(`${msg.author.username} has logged `+ data.Item.ETHTotal +`ETH in confirmed OTC deals`)
-    }
-
     // BEGIN !getDegens minor command
     if(msg.content.startsWith("!getDegens")) {
         // Searches AWS database to check if the user is already registered
