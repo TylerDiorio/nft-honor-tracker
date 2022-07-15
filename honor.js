@@ -75,8 +75,28 @@ client.on('messageCreate', async msg => {
         }
     }
 
+    // BEGIN !flex minor command
+    if(msg.content.startsWith("!flex")) {
+        // Searches AWS database for current user data
+        const getitem = async() => {
+            const params = {
+                TableName: process.env.AWS_TABLE_NAME,
+                Key: { OreoEtherion: msg.author.id}
+            }
+            return docClient.get(params).promise()
+        }
+        var data = await getitem();
+        if(data.Item === undefined || data.Item === null) {
+            msg_bal = `${msg.author.username}, you are not honored with Honor-Bot`
+            msg_bal += `\nPlease type  "!reg" to register`
+            msg.reply(msg_bal)
+            return
+        } else {msg.reply(`${msg.author.username} has logged `+ data.Item.ETHTotal +`ETH in ` +  data.Item.VOXIESTotal + ` confirmed OTC deals`)
+    }
+}
+
     // BEGIN !wipe-Oreo minor command
-    if(msg.content.startsWith("!wipe-oreo")) {
+    if(msg.content.startsWith("!wipe-oreo" && (msg.author.id === 523680748717211687 || msg.author.id === 189131746749448192))) {
         // Searches AWS database for current user data
         const params = {
             TableName: process.env.AWS_TABLE_NAME,
@@ -98,7 +118,7 @@ client.on('messageCreate', async msg => {
         }
     }
     // BEGIN !wipe-Etherion
-    if(msg.content.startsWith("!wipe-etherion")) {
+    if(msg.content.startsWith("!wipe-etherion" && (msg.author.id === 523680748717211687 || msg.author.id === 189131746749448192))) {
         // Searches AWS database for current user data
         const params = {
             TableName: process.env.AWS_TABLE_NAME,
@@ -120,7 +140,7 @@ client.on('messageCreate', async msg => {
         }
     }
     // BEGIN !wipe-global minor command
-    if(msg.content.startsWith("!wipe-global")) {
+    if(msg.content.startsWith("!wipe-global" && (msg.author.id === 523680748717211687 || msg.author.id === 189131746749448192))) {
         // Searches AWS database for current user data
         const params = {
             TableName: process.env.AWS_TABLE_NAME,
