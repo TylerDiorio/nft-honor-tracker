@@ -4,9 +4,6 @@ This repository will contain the necessary files to construct a discord bot that
 Users will be able to interact with the following commands in servers that host the nft-honor-tracker: 
 
 ```
-!reg
-```
-```
 !wipe-oreo
 ```
 ```
@@ -16,13 +13,16 @@ Users will be able to interact with the following commands in servers that host 
 !wipe-global
 ```
 ```
+!reg
+```
+```
 !addWallets (Address1) (Address2) (AddressN)
 ```
 ```
 !honor (Etherscan HASH#1) (Etherscan HASH#2)
 ```
 ```
-!getBal
+!flex
 ```
 ```
 !getDegens
