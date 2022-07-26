@@ -471,7 +471,6 @@ client.on('messageCreate', async msg => {
             if (i < Old_Degens.length) { 
                 if (Old_Degens[i] == New_Degens[0] || Old_Degens[i] == New_Degens[1] || 
                     Old_Degens[i] == New_Degens[2] || Old_Degens[i] == New_Degens[3]) {
-                    console.log("Dupe Degen found : ", Old_Degens[i]) 
                 }
                 tmp_Degens[i] = Old_Degens[i]
             } else {
