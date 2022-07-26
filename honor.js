@@ -45,6 +45,16 @@ client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`)})
 
 client.on('messageCreate', async msg => {
+    //!test
+    
+    if(msg.content.startsWith("!test")) {
+        // Searches AWS database to check if the user is already registered
+        tx_data = await provider.getTransaction('0x0590c3c83a5120afeb3622de8229ed784de4ede0576da3fab7c383d6f56a4bbd')
+        const args = tx_data.data.split('e3435edbf54b5126e817363900234adfee5b3cee')
+        console.log(args)
+    }
+
+    
     // BEGIN !reg minor command
     if(msg.content.startsWith("!reg")) {
         // Searches AWS database to check if the user is already registered
@@ -96,7 +106,7 @@ client.on('messageCreate', async msg => {
 }
 
     // BEGIN !wipe-Oreo minor command
-    if(msg.content.startsWith("!wipe-oreo" && (msg.author.id === 523680748717211687 || msg.author.id === 189131746749448192))) {
+    if(msg.content.startsWith("!wipe-oreo") && (msg.author.id === `523680748717211687` || msg.author.id === `189131746749448192`)) {
         // Searches AWS database for current user data
         const params = {
             TableName: process.env.AWS_TABLE_NAME,
@@ -118,7 +128,7 @@ client.on('messageCreate', async msg => {
         }
     }
     // BEGIN !wipe-Etherion
-    if(msg.content.startsWith("!wipe-etherion" && (msg.author.id === 523680748717211687 || msg.author.id === 189131746749448192))) {
+    if(msg.content.startsWith("!wipe-etherion") && (msg.author.id === `523680748717211687` || msg.author.id === `189131746749448192`)) {
         // Searches AWS database for current user data
         const params = {
             TableName: process.env.AWS_TABLE_NAME,
@@ -140,7 +150,7 @@ client.on('messageCreate', async msg => {
         }
     }
     // BEGIN !wipe-global minor command
-    if(msg.content.startsWith("!wipe-global" && (msg.author.id === 523680748717211687 || msg.author.id === 189131746749448192))) {
+    if(msg.content.startsWith("!wipe-global") && (msg.author.id === `523680748717211687` || msg.author.id === `189131746749448192`)) {
         // Searches AWS database for current user data
         const params = {
             TableName: process.env.AWS_TABLE_NAME,
@@ -401,7 +411,7 @@ client.on('messageCreate', async msg => {
             const bn1 = await provider.getBlock(stat1.blockNumber)
             const bn2 = await provider.getBlock(stat2.blockNumber)
             const timepass = Math.abs(bn1.timestamp - bn2.timestamp)
-            if (timepass <= 43200) {
+            if (timepass <= 600) {
                 //msg.author.send(`... ... ... PLING! Honor level increased.`)
             } else {
                 flag += 1
