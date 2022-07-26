@@ -401,7 +401,7 @@ client.on('messageCreate', async msg => {
             const bn1 = await provider.getBlock(stat1.blockNumber)
             const bn2 = await provider.getBlock(stat2.blockNumber)
             const timepass = Math.abs(bn1.timestamp - bn2.timestamp)
-            if (timepass <= 600) {
+            if (timepass <= 43200) {
                 //msg.author.send(`... ... ... PLING! Honor level increased.`)
             } else {
                 flag += 1
