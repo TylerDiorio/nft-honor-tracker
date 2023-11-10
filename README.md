@@ -4,10 +4,10 @@ This repository will contain the necessary files to construct a discord bot that
 Users will be able to interact with the following commands in servers that host the nft-honor-tracker: 
 
 ```
-!wipe-oreo
+!wipe-person1
 ```
 ```
-!wipe-etherion
+!wipe-personN
 ```
 ```
 !wipe-global
